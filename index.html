@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Juego de fermentación 16 bits</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Courier New", monospace;
+    background: #1e1e1e;
+    color: white;
+    text-align: center;
+    overflow-x: auto;
+}
+
+h2 {
+    margin: 4px 0 2px 0;
+    color: #ffd739;
+    text-shadow: 1px 1px 0 #000;
+    font-size: 20px;
+}
+
+p {
+    margin: 1px 0;
+    color: #dddddd;
+    font-size: 11px;
+}
+
+.main-layout {
+    width: fit-content;
+    margin: 6px auto 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.canvas-wrap {
+    width: 1280px;
+    flex: 0 0 1280px;
+}
+
+canvas {
+    width: 1280px;
+    height: auto;
+    background: #d9d9d9;
+    border: 4px solid #111;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Juego de fermentación fed batch de levadura líquida</h2>
+<p>Vista experimental estilo juego 16 bits | Fermentador de 5000 L | Con operador: x0.5 | Sin operador: x4.</p>
+<p>Calendario: inicia el 01 de abril de 2026 a las 08:00.</p>
+<p>Inicio: inversión de $50.000.000 CLP. Victoria: resultado neto ≥ $100.000.000. Derrota: resultado neto ≤ −$100.000.000.</p>
+
+<div class="main-layout">
+    <div class="canvas-wrap">
+        <canvas id="canvas" width="1280" height="800"></canvas>
+    </div>
+</div>
+
+<script src="modelo/01_variables_config.js"></script>
+<script src="modelo/02_inicializacion_botones.js"></script>
+<script src="modelo/03_auxiliares_economia.js"></script>
+<script src="modelo/04_modelo_principal.js"></script>
+
+<script src="vista/00_config_canvas.js"></script>
+<script src="vista/01_utilidades_visuales.js"></script>
+<script src="vista/02_botones_hitboxes.js"></script>
+<script src="vista/03_panel_izquierdo.js"></script>
+<script src="vista/04_panel_derecho.js"></script>
+<script src="vista/05_tanque.js"></script>
+<script src="vista/06_loop.js"></script>
+
+</body>
+</html>
