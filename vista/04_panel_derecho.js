@@ -413,25 +413,45 @@ function panelProductoMesDerecha() {
 
     marcoPanel(x, y, w, h, "PRODUCTO DEL MES", "#c79700", "#fff2bc", "▧");
 
-    let nombre = productoBuscadoMes && productoBuscadoMes.nombre ? productoBuscadoMes.nombre : "No definido";
+    let nombre = productoBuscadoMes && productoBuscadoMes.nombre
+        ? productoBuscadoMes.nombre
+        : "No definido";
 
-    textoPixel(nombre, x + 20, y + 70, "bold 13px monospace", "#111");
+    let requisitos = "Sin requisitos definidos";
 
-    textoPixel("Cumple", x + 20, y + 96, "bold 13px monospace", "#111");
+    if (productoBuscadoMes) {
+        requisitos =
+	"Viab ≥ " + productoBuscadoMes.viabilidadMin.toFixed(0) + "% | " +            "Xv ≥ " + 		productoBuscadoMes.xvMin.toFixed(1) + " | " +
+            "EtOH " + productoBuscadoMes.etanolMin.toFixed(1) + "-" +
+            productoBuscadoMes.etanolMax.toFixed(1) + "% | " +
+            "S ≤ " + productoBuscadoMes.sustratoMax.toFixed(1);
+    }
+
+    textoPixel(nombre, x + 20, y + 58, "bold 18px monospace", "#111");
+
+    texto(
+        requisitos,
+        x + 20,
+        y + 82,
+        "bold 13px monospace",
+        "#111"
+    );
+
+    textoPixel("Cumple", x + 20, y + 108, "bold 12px monospace", "#111");
     textoPixel(
         cumpleProductoBuscado ? "Sí" : "No",
         x + 160,
-        y + 96,
-        "bold 13px monospace",
+        y + 108,
+        "bold 12px monospace",
         cumpleProductoBuscado ? "#087a13" : "#c00020"
     );
 
-    textoPixel("Precio", x + 250, y + 96, "bold 13px monospace", "#111");
+    textoPixel("Precio", x + 250, y + 108, "bold 12px monospace", "#111");
     textoPixel(
         "$" + clp(precioProducto_CLP_L) + "/L",
         x + w - 24,
-        y + 96,
-        "bold 13px monospace",
+        y + 108,
+        "bold 12px monospace",
         precioProducto_CLP_L < 0 ? "#c00020" : "#087a13",
         "right"
     );
