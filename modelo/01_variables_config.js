@@ -46,7 +46,7 @@ const costoTrabajadorSemana_CLP_mes = 1000000.0;
 const costoTrabajadorSemana_CLP_h = costoTrabajadorSemana_CLP_mes / 720.0;
 
 const costoTrabajadorPartTime_CLP_h = costoTrabajadorSemana_CLP_h * 1.5;
-const maxHorasPartTimePorSemana = 8.0;
+const maxHorasPartTimePorSemana = 16.0;
 
 let costoTrabajadoresSemana_CLP = 0.0;
 let costoTrabajadoresPartTime_CLP = 0.0;
@@ -64,53 +64,74 @@ let claveSemanaActual = "";
 const perfilesProductoBuscado = [
     {
         nombre: "Levadura premium cervecera",
-        viabilidadMin: 90.0,
+        descripcion: "Cultivo viable de alto valor para uso cervecero.",
+        viabilidadMin: 85.0,
         xvMin: 6.0,
         etanolMin: 0.5,
         etanolMax: 2.0,
-        sustratoMax: 5.0,
-        factorTemperaturaMin: 0.85,
+        sustratoMax: 6.0,
         precioMax_CLP_L: 2500.0
     },
     {
         nombre: "Levadura de alta concentración",
-        viabilidadMin: 85.0,
+        descripcion: "Producto centrado en alta biomasa viable por litro.",
+        viabilidadMin: 75.0,
         xvMin: 8.0,
         etanolMin: 0.5,
         etanolMax: 2.5,
-        sustratoMax: 6.0,
-        factorTemperaturaMin: 0.80,
+        sustratoMax: 8.0,
         precioMax_CLP_L: 2700.0
     },
     {
-        nombre: "Levadura muy viable baja en etanol",
-        viabilidadMin: 94.0,
-        xvMin: 5.0,
-        etanolMin: 0.2,
-        etanolMax: 1.2,
-        sustratoMax: 4.0,
-        factorTemperaturaMin: 0.85,
-        precioMax_CLP_L: 2800.0
-    },
-    {
-        nombre: "Levadura estable con etanol protector",
-        viabilidadMin: 88.0,
-        xvMin: 5.5,
-        etanolMin: 1.0,
-        etanolMax: 2.0,
-        sustratoMax: 5.0,
-        factorTemperaturaMin: 0.75,
-        precioMax_CLP_L: 2400.0
+        nombre: "Levadura tolerante a etanol alto",
+        descripcion: "Levadura resistente a etanol elevado, con viabilidad moderada aceptable.",
+        viabilidadMin: 55.0,
+        xvMin: 4.0,
+        etanolMin: 6.0,
+        etanolMax: 7.0,
+        sustratoMax: 12.0,
+        precioMax_CLP_L: 3200.0
     },
     {
         nombre: "Levadura económica aceptable",
-        viabilidadMin: 80.0,
-        xvMin: 4.5,
+        descripcion: "Producto de menor exigencia, orientado a costo competitivo.",
+        viabilidadMin: 60.0,
+        xvMin: 4.0,
         etanolMin: 0.5,
         etanolMax: 3.0,
-        sustratoMax: 8.0,
-        factorTemperaturaMin: 0.70,
+        sustratoMax: 10.0,
         precioMax_CLP_L: 1800.0
+    },
+    {
+        nombre: "Cerveza común",
+        descripcion: "Bebida fermentada estándar, con baja levadura viable residual.",
+        viabilidadMax: 35.0,
+        xvMax: 2.0,
+        etanolMin: 4.0,
+        etanolMax: 6.0,
+        sustratoMax: 15.0,
+        precioMax_CLP_L: 2200.0
+    },
+    {
+        nombre: "Cerveza fuerte",
+        descripcion: "Bebida de mayor graduación, con muy baja levadura viable residual.",
+        viabilidadMax: 30.0,
+        xvMax: 1.5,
+        etanolMin: 6.0,
+        etanolMax: 8.0,
+        sustratoMax: 18.0,
+        precioMax_CLP_L: 2800.0
+    },
+    {
+        nombre: "Mosto parcialmente fermentado",
+        descripcion: "Producto intermedio con etanol moderado y sustrato residual alto.",
+        viabilidadMin: 40.0,
+        xvMin: 2.5,
+        etanolMin: 2.0,
+        etanolMax: 4.0,
+        sustratoMin: 15.0,
+        sustratoMax: 35.0,
+        precioMax_CLP_L: 1600.0
     }
 ];
 
@@ -123,26 +144,84 @@ let mesActualProducto = "";
 let mejorPrecioMes_CLP_L = -999999;
 let mejorProductoMesTexto = "Sin producto registrado";
 
+function mezclarProductos(lista) {
+    let copia = lista.slice();
+
+    for (let i = copia.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        let temp = copia[i];
+        copia[i] = copia[j];
+        copia[j] = temp;
+    }
+
+    return copia;
+}
+
 function inicializarPlanProductosAnual() {
     planProductosAnual = [];
 
-    for (let i = 0; i < 12; i++) {
-        let indice = Math.floor(Math.random() * perfilesProductoBuscado.length);
-        planProductosAnual.push(perfilesProductoBuscado[indice]);
+    // Hay 07 productos definidos. Para 12 meses, se evita repetir
+    // hasta agotar el ciclo completo; luego se remezcla y continúa.
+    while (planProductosAnual.length < 12) {
+        let ciclo = mezclarProductos(perfilesProductoBuscado);
+
+        for (let i = 0; i < ciclo.length && planProductosAnual.length < 12; i++) {
+            planProductosAnual.push(ciclo[i]);
+        }
     }
+}
+
+function formatearCondicionViabilidad(producto) {
+    if (producto.viabilidadMax !== undefined) {
+        return "Viab ≤ " + producto.viabilidadMax.toFixed(0) + "%";
+    }
+
+    if (producto.viabilidadMin !== undefined) {
+        return "Viab ≥ " + producto.viabilidadMin.toFixed(0) + "%";
+    }
+
+    return "Viab libre";
+}
+
+function formatearCondicionXv(producto) {
+    if (producto.xvMax !== undefined) {
+        return "Xv ≤ " + producto.xvMax.toFixed(1) + " g/L";
+    }
+
+    if (producto.xvMin !== undefined) {
+        return "Xv ≥ " + producto.xvMin.toFixed(1) + " g/L";
+    }
+
+    return "Xv libre";
+}
+
+function formatearCondicionSustrato(producto) {
+    if (producto.sustratoMin !== undefined && producto.sustratoMax !== undefined) {
+        return "S " + producto.sustratoMin.toFixed(1) + " a " + producto.sustratoMax.toFixed(1) + " g/L";
+    }
+
+    if (producto.sustratoMax !== undefined) {
+        return "S ≤ " + producto.sustratoMax.toFixed(1) + " g/L";
+    }
+
+    return "S libre";
+}
+
+function formatearProductoBuscado(producto) {
+    return (
+        producto.nombre +
+        " | " + formatearCondicionViabilidad(producto) +
+        " | " + formatearCondicionXv(producto) +
+        " | EtOH " + producto.etanolMin.toFixed(1) + " a " + producto.etanolMax.toFixed(1) + "%" +
+        " | " + formatearCondicionSustrato(producto) +
+        " | Precio máx. $" + Math.round(producto.precioMax_CLP_L).toLocaleString("es-CL") + "/L"
+    );
 }
 
 function actualizarProductoBuscadoDelMes() {
     let mes = fechaActualSimulacion.getMonth();
     productoBuscadoMes = planProductosAnual[mes];
-
-    productoBuscadoTexto =
-        productoBuscadoMes.nombre +
-        " | precio máximo $" + Math.round(productoBuscadoMes.precioMax_CLP_L).toLocaleString("es-CL") + "/L" +
-        " | Viab ≥ " + productoBuscadoMes.viabilidadMin.toFixed(0) + "%" +
-        " | Xv ≥ " + productoBuscadoMes.xvMin.toFixed(1) + " g/L" +
-        " | EtOH " + productoBuscadoMes.etanolMin.toFixed(1) + " a " + productoBuscadoMes.etanolMax.toFixed(1) + "%" +
-        " | S ≤ " + productoBuscadoMes.sustratoMax.toFixed(1) + " g/L";
+    productoBuscadoTexto = formatearProductoBuscado(productoBuscadoMes);
 }
 
 function actualizarMejorProductoDelMes() {

@@ -131,24 +131,80 @@ function calcularInhibicionEtanol() {
     if (inhibEtanol > 1) inhibEtanol = 1;
 }
 
-function calcularEscalonViabilidad() {
-    if (viabilidad >= 90.0) {
-        return 1.00;
+function calcularFactorViabilidadBuscada() {
+    if (!productoBuscadoMes) {
+        return 1.0;
     }
 
-    if (viabilidad >= 80.0) {
-        return 0.70 + 0.30 * ((viabilidad - 80.0) / 10.0);
+    if (productoBuscadoMes.viabilidadMax !== undefined) {
+        if (viabilidad <= productoBuscadoMes.viabilidadMax) {
+            return 1.0;
+        }
+
+        return Math.max(0.0, productoBuscadoMes.viabilidadMax / Math.max(viabilidad, 0.001));
     }
 
-    if (viabilidad >= 70.0) {
-        return 0.40 + 0.30 * ((viabilidad - 70.0) / 10.0);
+    if (productoBuscadoMes.viabilidadMin !== undefined) {
+        if (viabilidad >= productoBuscadoMes.viabilidadMin) {
+            return 1.0;
+        }
+
+        return Math.max(0.0, viabilidad / productoBuscadoMes.viabilidadMin);
     }
 
-    if (viabilidad >= 60.0) {
-        return 0.15 + 0.25 * ((viabilidad - 60.0) / 10.0);
+    return 1.0;
+}
+
+function cumpleViabilidadBuscada() {
+    if (!productoBuscadoMes) {
+        return true;
     }
 
-    return -1.0;
+    if (productoBuscadoMes.viabilidadMax !== undefined) {
+        return viabilidad <= productoBuscadoMes.viabilidadMax;
+    }
+
+    if (productoBuscadoMes.viabilidadMin !== undefined) {
+        return viabilidad >= productoBuscadoMes.viabilidadMin;
+    }
+
+    return true;
+}
+
+function calcularFactorBiomasaBuscada() {
+    if (!productoBuscadoMes) {
+        return 1.0;
+    }
+
+    if (productoBuscadoMes.xvMax !== undefined) {
+        if (Xv <= productoBuscadoMes.xvMax) {
+            return 1.0;
+        }
+
+        return Math.max(0.0, productoBuscadoMes.xvMax / Math.max(Xv, 0.001));
+    }
+
+    if (productoBuscadoMes.xvMin !== undefined) {
+        return Math.min(1.0, Math.max(0.0, Xv / productoBuscadoMes.xvMin));
+    }
+
+    return 1.0;
+}
+
+function cumpleBiomasaBuscada() {
+    if (!productoBuscadoMes) {
+        return true;
+    }
+
+    if (productoBuscadoMes.xvMax !== undefined) {
+        return Xv <= productoBuscadoMes.xvMax;
+    }
+
+    if (productoBuscadoMes.xvMin !== undefined) {
+        return Xv >= productoBuscadoMes.xvMin;
+    }
+
+    return true;
 }
 
 function calcularFactorEtanolBuscado() {
@@ -164,12 +220,40 @@ function calcularFactorEtanolBuscado() {
     return Math.max(0.15, 1.0 - exceso / 4.0);
 }
 
+function cumpleEtanolBuscado() {
+    return Epercent >= productoBuscadoMes.etanolMin && Epercent <= productoBuscadoMes.etanolMax;
+}
+
 function calcularFactorSustratoBuscado() {
-    if (S <= productoBuscadoMes.sustratoMax) {
+    if (!productoBuscadoMes) {
         return 1.0;
     }
 
-    return Math.max(0.10, 1.0 - (S - productoBuscadoMes.sustratoMax) / 20.0);
+    if (productoBuscadoMes.sustratoMin !== undefined && S < productoBuscadoMes.sustratoMin) {
+        return Math.max(0.10, S / productoBuscadoMes.sustratoMin);
+    }
+
+    if (productoBuscadoMes.sustratoMax !== undefined && S > productoBuscadoMes.sustratoMax) {
+        return Math.max(0.10, 1.0 - (S - productoBuscadoMes.sustratoMax) / 25.0);
+    }
+
+    return 1.0;
+}
+
+function cumpleSustratoBuscado() {
+    if (!productoBuscadoMes) {
+        return true;
+    }
+
+    if (productoBuscadoMes.sustratoMin !== undefined && S < productoBuscadoMes.sustratoMin) {
+        return false;
+    }
+
+    if (productoBuscadoMes.sustratoMax !== undefined && S > productoBuscadoMes.sustratoMax) {
+        return false;
+    }
+
+    return true;
 }
 
 function calcularPrecioProducto() {
@@ -183,29 +267,26 @@ function calcularPrecioProducto() {
         return;
     }
 
-    let factorViabilidad = calcularEscalonViabilidad();
-    let factorBiomasa = Math.min(1.0, Math.max(0.0, Xv / productoBuscadoMes.xvMin));
+    let factorViabilidad = calcularFactorViabilidadBuscada();
+    let factorBiomasa = calcularFactorBiomasaBuscada();
     let factorSustrato = calcularFactorSustratoBuscado();
     let factorEtanol = calcularFactorEtanolBuscado();
     let factorTermico = Math.min(1.0, Math.max(0.0, factorTemperatura));
 
     if (
-        factorViabilidad < 0.0 ||
-        S > 25.0 ||
-        Epercent > 6.0 ||
+        S > 60.0 ||
+        Epercent > 10.0 ||
         factorTermico < 0.25 ||
-        Xv < 1.0
+        (productoBuscadoMes.xvMin !== undefined && Xv < 0.3)
     ) {
         productoMalo = true;
     }
 
     cumpleProductoBuscado =
-        viabilidad >= productoBuscadoMes.viabilidadMin &&
-        Xv >= productoBuscadoMes.xvMin &&
-        Epercent >= productoBuscadoMes.etanolMin &&
-        Epercent <= productoBuscadoMes.etanolMax &&
-        S <= productoBuscadoMes.sustratoMax &&
-        factorTemperatura >= productoBuscadoMes.factorTemperaturaMin;
+        cumpleViabilidadBuscada() &&
+        cumpleBiomasaBuscada() &&
+        cumpleEtanolBuscado() &&
+        cumpleSustratoBuscado();
 
     if (productoMalo) {
         precioProducto_CLP_L = precioProductoMaloVenta_CLP_L;
